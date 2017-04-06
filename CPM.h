@@ -48,6 +48,17 @@ private:
 	void OnePass(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* im1f, UCImage* im2f, IntImage& seeds, IntImage& neighbors, FImage* pydSeedsFlow);
 	void UpdateSearchRadius(IntImage& neighbors, FImage* pydSeedsFlow, int level, float* outRadius);
 
+	// minimum circle
+	struct Point{
+		double x, y;
+	};
+	double dist(Point a, Point b);
+	Point intersection(Point u1, Point u2, Point v1, Point v2);
+	Point circumcenter(Point a, Point b, Point c);
+	// return the radius of the minimal circle
+	float MinimalCircle(float* x, float*y, int n, float* centerX = NULL, float* centerY = NULL);
+
+	//
 	int _step;
 	int _maxIters;
 	float _stopIterRatio;

@@ -16,7 +16,7 @@ C:/OpenCV/lib/x86/Debug
 C:/OpenCV/lib/x86/Release
 )
 
-ADD_EXECUTABLE(${PROJ_NAME} main.cpp CPM.cpp MinimalCircle.cpp)
+ADD_EXECUTABLE(${PROJ_NAME} main.cpp CPM.cpp)
 
 TARGET_LINK_LIBRARIES(${PROJ_NAME}
 debug opencv_core310d.lib
