@@ -10,7 +10,6 @@ Version 1.2
 
 Copyright (C) 2016 Yinlin.Hu
 
-
 Usages:
 
 The program "cpm.exe" has been built and tested on Windows 7.
@@ -21,9 +20,6 @@ Explanations:
 
 The output of the program is a text file, which is in the format of "x1,y1,x2,y2"
 corresponding to one match per line.
-
-The program outputs matches only. Please use an interpolation method
-(EpicFlow: http://lear.inrialpes.fr/src/epicflow/) to obtain the final optical flow results.
 
 */
 
@@ -53,14 +49,12 @@ private:
 	void UpdateSearchRadius(IntImage& neighbors, FImage* pydSeedsFlow, int level, float* outRadius);
 
 	int _step;
-	int _levels;
 	int _maxIters;
 	float _stopIterRatio;
 	float _pydRatio;
 
 	int _isStereo;
 	int _maxDisplacement;
-	int _checkLevels;
 	float _checkThreshold;
 	int _borderWidth;
 

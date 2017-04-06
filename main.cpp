@@ -19,7 +19,7 @@ void WriteMatches(const char *filename, FImage& inMat)
 void main(int argc, char** argv)
 {
 	if (argc < 4){
-		printf("USAGE: cpm.exe img1Name img2Name outMatchName\n");
+		printf("USAGE: cpm.exe image1 image2 outMatchText\n");
 		return;
 	}
 
@@ -30,7 +30,11 @@ void main(int argc, char** argv)
 	char* outMatName = argv[3];
 
 	int w = img1.width();
-	int h = img2.height();
+	int h = img1.height();
+	if (img2.width() != w || img2.height() != h){
+		printf("CPM can only handle images with the same dimension!\n");
+		return;
+	}
 
 	CTimer totalT;
 	FImage matches;

@@ -2,23 +2,21 @@
 #include "MinimalCircle.h"
 #include "ImageFeature.h"
 
+// [4/6/2017 Yinlin.Hu]
+
 #define UNKNOWN_FLOW 1e10
 
 CPM::CPM()
 {
 	// default parameters
 	_step = 3;
-	_levels = -1;
-	
-	_maxIters = 10;
-	_stopIterRatio = 0.05;
-
-	_pydRatio = 0.5;
-
 	_isStereo = false;
 
+	_maxIters = 10;
+	_stopIterRatio = 0.05;
+	_pydRatio = 0.5;
+
 	_maxDisplacement = 400;
-	_checkLevels = 1;
 	_checkThreshold = 3;
 	_borderWidth = 5;
 
@@ -60,10 +58,7 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	_pyd1.ConstructPyramid(img1, _pydRatio, 30);
 	_pyd2.ConstructPyramid(img2, _pydRatio, 30);
 
-	_levels = _pyd1.nlevels();
-	int nLevels = _levels;
-
-	t.toc("construct pyramid: ");
+	int nLevels = _pyd1.nlevels();
 
 	if (_im1f)
 		delete[] _im1f;
@@ -146,77 +141,18 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	t.toc("backward matching: ");
 
 	// cross check
-	IntImage validFlag;
-	validFlag.allocate(numV, nLevels);
-	float* th = new float[nLevels];
-	for (int i = 0; i < nLevels; i++){
-		th[i] = _checkThreshold*pow(1. / _pydRatio, i);
-	}
-	for (int i = 0; i < nLevels; i++){
-		CrossCheck(_seeds, _pydSeedsFlow[i], _pydSeedsFlow2[i], _kLabels2, validFlag.rowPtr(i), th[i]);
-	}
-
+	int* validFlag = new int[numV];
+	CrossCheck(_seeds, _pydSeedsFlow[0], _pydSeedsFlow2[0], _kLabels2, validFlag, _checkThreshold);
 	seedsFlow.copyData(_pydSeedsFlow[0]);
-
-	int FB_CHECK = 1;
-	if (FB_CHECK){
-		int* errorCnt = new int[numV];
-		int* unstable = new int[numV];
-		memset(errorCnt, 0, sizeof(int)*numV);
-		memset(unstable, 0, sizeof(int)*numV);
-		for (int i = 0; i < numV; i++){
-			for (int l = 0; l < nLevels; l++){
-				if (!validFlag[l*numV + i]){
-					errorCnt[i]++;
-				}
-			}
-			//printf("%d ", validCnt[i]);
-		}
-
-		int b = _borderWidth;
-		int lvlCnt = min(nLevels, _checkLevels);
-		for (int i = 0; i < numV; i++){
-
-			for (int j = 0; j < lvlCnt; j++){
-				if (!validFlag[j * numV + i]){
-					unstable[i] = 1;
-					break;
-				}
-			}
-
-			int x = _seeds[2 * i];
-			int y = _seeds[2 * i + 1];
-			if (x < b || x >= w - b || y < b || y >= h - b){
-				unstable[i] = 1;
-			}
-		}
-
-		for (int i = 0; i < numV; i++){
-			if (unstable[i]){
-				seedsFlow[2 * i] = UNKNOWN_FLOW;
-				seedsFlow[2 * i + 1] = UNKNOWN_FLOW;
-			}
-		}
-		delete[] errorCnt;
-		delete[] unstable;
-	}
-
-	delete[] th;
-	//t.toc("cross check: ");
-
-	IntImage validImg(w, h);
-	memset(validImg.pData, 0, w*h*sizeof(int));
 	for (int i = 0; i < numV; i++){
-		int x = _seeds[2 * i];
-		int y = _seeds[2 * i + 1];
-		float u = seedsFlow[2 * i];
-		float v = seedsFlow[2 * i + 1];
-		if (abs(u) < UNKNOWN_FLOW && abs(v) < UNKNOWN_FLOW){
-			validImg.pData[y*w + x] = 1;
+		if (!validFlag[i]){
+			seedsFlow[2 * i] = UNKNOWN_FLOW;
+			seedsFlow[2 * i + 1] = UNKNOWN_FLOW;
 		}
 	}
+	delete[] validFlag;
 
-	//
+	// flow 2 match
 	FImage tmpMatch(4, numV);
 	tmpMatch.setValue(-1);
 	int validMatCnt = 0;
@@ -273,7 +209,7 @@ void CPM::CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, Int
 			valid[i] = 0;
 			continue;
 		}
-#if 1
+
 		int idx2 = kLabel2[y2*w + x2];
 		float u2 = seedsFlow2[2 * idx2];
 		float v2 = seedsFlow2[2 * idx2 + 1];
@@ -281,7 +217,7 @@ void CPM::CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, Int
 		if (diff > th){
 			valid[i] = 0;
 		}
-#endif
+
 	}
 }
 
