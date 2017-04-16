@@ -1,8 +1,9 @@
 #pragma once
 
 #include "project.h"
-#include "stdio.h"
-#include "memory.h"
+#include <stdio.h>
+#include <string.h>
+#include <memory.h>
 #include "ImageProcessing.h"
 #include <iostream>
 #include <fstream>
@@ -704,8 +705,7 @@ Image<T>& Image<T>::operator=(const Image<T>& other)
 template <class T>
 bool Image<T>::IsFloat() const
 {
-	if (typeid(T) == typeid(double) || typeid(T) == typeid(float)
-		|| typeid(T) == typeid(long double) || typeid(T) == typeid(long float))
+	if (typeid(T) == typeid(double) || typeid(T) == typeid(float))
 		return true;
 	else
 		return false;
@@ -892,17 +892,7 @@ bool Image<T>::loadImage(ifstream& myfile)
 {
 	char type[16];
 	myfile.read(type,16);
-#ifdef _LINUX_MAC
-	if(strcasecmp(type,"uint16")==0)
-		sprintf(type,"unsigned short");
-	if(strcasecmp(type,"uint32")==0)
-		sprintf(type,"unsigned int");
-	if(strcasecmp(type,typeid(T).name())!=0)
-	{
-		cout<<"The type of the image is different from the type of the object!"<<endl;
-		return false;
-	}
-#else
+
 	if(strcmpi(type,"uint16")==0)
 		sprintf(type,"unsigned short");
 	if(strcmpi(type,"uint32")==0)
@@ -912,7 +902,7 @@ bool Image<T>::loadImage(ifstream& myfile)
 		cout<<"The type of the image is different from the type of the object!"<<endl;
 		return false;
 	}
-#endif
+
 	int width,height,nchannels;
 	myfile.read((char *)&width,sizeof(int));
 	myfile.read((char *)&height,sizeof(int));

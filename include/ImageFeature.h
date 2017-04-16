@@ -124,10 +124,10 @@ void ImageFeature::imSIFT(const Image<T>& imsrc, UCImage &imsift, int cellSize, 
 		imsift.allocate(sift_width,sift_height,siftdim);
 
 #ifdef WITH_SSE
-	__m128 _v1, _v5;
+	hu_m128 _v1, _v5;
 	float v1 = 0.01, v5 = 255.;
-	_v1 = _mm_set_ps1(v1);
-	_v5 = _mm_set_ps1(v5);
+	_v1.m = _mm_set_ps1(v1);
+	_v5.m = _mm_set_ps1(v5);
 #endif
 	// now sample to get SIFT image
 	FImage sift_cell(siftdim,1);
@@ -157,23 +157,24 @@ void ImageFeature::imSIFT(const Image<T>& imsrc, UCImage &imsift, int cellSize, 
 			//memcpy(imsift.pData+offset,sift_cell.pData,sizeof(float)*siftdim);
 			unsigned char* dst = imsift.pData + offset;
 			//
-			__m128* src = (__m128*)sift_cell.pData;
-			__m128 r0, r1, r2, r3, r4;
-			r0 = _mm_set_ps1(0);
+			hu_m128* src = (hu_m128*)sift_cell.pData;
+			hu_m128 r0, r1, r2, r3, r4;
+			r0.m = _mm_set_ps1(0);
 			for (int ii = 0; ii < siftdim / 4; ii++){
-				r1 = _mm_mul_ps(*src, *src);
-				r0 = _mm_add_ps(r0, r1);
+				r1.m = _mm_mul_ps(src->m, src->m);
+				r0.m = _mm_add_ps(r0.m, r1.m);
 				src++;
 			}
 			float mag = sqrt(r0.m128_f32[0] + r0.m128_f32[1] + r0.m128_f32[2] + r0.m128_f32[3]);
 			//
-			__m128 _vmag = _mm_set_ps1(mag);
-			src = (__m128*)sift_cell.pData;
+			hu_m128 _vmag;
+			_vmag.m= _mm_set_ps1(mag);
+			src = (hu_m128*)sift_cell.pData;
 			for (int ii = 0; ii < siftdim / 4;ii++){
-				r1 = _mm_add_ps(_vmag, _v1);
-				r2 = _mm_div_ps(*src, r1);
-				r3 = _mm_mul_ps(r2, _v5);
-				r4 = _mm_min_ps(r3, _v5);
+				r1.m = _mm_add_ps(_vmag.m, _v1.m);
+				r2.m = _mm_div_ps(src->m, r1.m);
+				r3.m = _mm_mul_ps(r2.m, _v5.m);
+				r4.m = _mm_min_ps(r3.m, _v5.m);
 				dst[0] = r4.m128_f32[0];
 				dst[1] = r4.m128_f32[1];
 				dst[2] = r4.m128_f32[2];

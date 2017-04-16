@@ -5,9 +5,9 @@ Code for
 
 《Coarse-to-fine PatchMatch for dense correspondence》 submitted to T-CSVT
 
-The program has been built and tested on Windows 7.
+The program has been built and tested on Windows 7 and Ubuntu 16.04.
 
-> USAGE: cpm.exe img1Name img2Name outMatchName
+> USAGE: cpm img1Name img2Name outMatchName
 
 Explanations:
 

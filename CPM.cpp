@@ -240,11 +240,11 @@ float CPM::MatchCost(FImage& img1, FImage& img2, UCImage* im1f, UCImage* im2f, i
 
 #ifdef WITH_SSE
 	// SSE2
-	__m128i *r1 = (__m128i*)p1, *r2 = (__m128i*)p2, r3;
+	hu_m128 *r1 = (hu_m128*)p1, *r2 = (hu_m128*)p2, r3;
 	int iterCnt = ch / 16;
 	int idx = 0;
 	for (idx = 0; idx < iterCnt; idx++){
-		r3 = _mm_sad_epu8(r1[idx], r2[idx]);
+		r3.mi = _mm_sad_epu8(r1[idx].mi, r2[idx].mi);
 		totalDiff += (r3.m128i_u16[0] + r3.m128i_u16[4]);
 	}
 	// add the left

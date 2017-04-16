@@ -6,12 +6,17 @@
 /************************************************************************/
 /*                   CTimer                                             */
 /************************************************************************/
+#ifdef WIN32
 #include <windows.h>
+#else
+#include <sys/time.h>
+#endif
+
 template <class T>
 class _CTimer
 {
 public:
-	_CTimer(){ QueryPerformanceFrequency(&f); tic(); };
+	_CTimer();
 	~_CTimer(){};
 
 	void tic();	// time in clock
@@ -20,22 +25,45 @@ private:
 	T inT, f;
 };
 
+template <class T>
+_CTimer<T>::_CTimer()
+{
+#ifdef WIN32
+	QueryPerformanceFrequency(&f);
+#endif
+	tic();
+}
+
+#ifdef WIN32
 typedef _CTimer<LARGE_INTEGER> CTimer; // only CTimer makes sense
+#else
+typedef _CTimer<struct timeval> CTimer;
+#endif
 
 template <class T>
 void _CTimer<T>::tic()
 {
+#ifdef WIN32
 	QueryPerformanceCounter(&inT);
+#else
+	gettimeofday(&inT,NULL);
+#endif
 }
 
 template <class T>
 double _CTimer<T>::toc(const char* msg)
 {
+#ifdef WIN32
 	LARGE_INTEGER outT;
 	QueryPerformanceCounter(&outT);
 
 	double dt = (double)(outT.QuadPart-inT.QuadPart)/f.QuadPart;
-	
+#else
+	struct timeval outT;
+	gettimeofday(&outT,NULL);
+	double dt = 1000000 * (outT.tv_sec - inT.tv_sec) + outT.tv_usec - inT.tv_usec;
+	dt /= 1000000;
+#endif
 	if(msg){
 		printf("%s %f [s]\n", msg, dt);
 	}

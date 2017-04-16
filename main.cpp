@@ -16,11 +16,11 @@ void WriteMatches(const char *filename, FImage& inMat)
 	fclose(fid);
 }
 
-void main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	if (argc < 4){
-		printf("USAGE: cpm.exe image1 image2 outMatchText\n");
-		return;
+		printf("USAGE: CPM image1 image2 outMatchText <step>\n");
+		return -1;
 	}
 
 	FImage img1, img2;
@@ -28,21 +28,28 @@ void main(int argc, char** argv)
 	img1.imread(argv[1]);
 	img2.imread(argv[2]);
 	char* outMatName = argv[3];
+	int step = 3;
+	if (argc >= 5){
+		step = atoi(argv[4]);
+	}
 
 	int w = img1.width();
 	int h = img1.height();
 	if (img2.width() != w || img2.height() != h){
 		printf("CPM can only handle images with the same dimension!\n");
-		return;
+		return -1;
 	}
 
 	CTimer totalT;
 	FImage matches;
 
 	CPM cpm;
+	cpm.SetStep(step);
 	cpm.Matching(img1, img2, matches);
 
 	totalT.toc("total time: ");
 
 	WriteMatches(outMatName, matches);
+
+	return 0;
 }
