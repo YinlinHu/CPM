@@ -20,7 +20,7 @@
 using namespace std;
 
 enum collapse_type{collapse_average,collapse_max,collapse_min};
-enum color_type{RGB,BGR,DATA,GRAY,LAB};
+enum color_type{ DATA, GRAY, RGB, BGR, LAB };
 
 // template class for image
 template <class T>
@@ -495,6 +495,7 @@ Image<T>::Image()
 	pData=NULL;
 	imWidth=imHeight=nChannels=nPixels=nElements=0;
 	IsDerivativeImage=false;
+	colorType = DATA;
 }
 
 //------------------------------------------------------------------------------------------
@@ -512,6 +513,7 @@ Image<T>::Image(int width,int height,int nchannels)
 	if(nElements>0)
 		memset(pData,0,sizeof(T)*nElements);
 	IsDerivativeImage=false;
+	colorType = DATA;
 }
 
 template <class T>
@@ -540,7 +542,8 @@ void Image<T>::allocate(int width,int height,int nchannels)
 	nChannels=nchannels;
 	computeDimension();
 	pData=NULL;
-	
+	colorType = DATA;
+
 	if(nElements>0)
 	{
 		pData = (T*)xmalloc(nElements * sizeof(T));
@@ -1553,7 +1556,7 @@ void Image<T>::desaturate(Image<T1> &image) const
 		collapse(image);
 		return;
 	}
-	if(!(image.width()==imWidth && image.height()==imHeight && image.nChannels==1))
+	if (!(image.width() == imWidth && image.height() == imHeight && image.nchannels() == 1))
 		image.allocate(imWidth,imHeight,1);
 	T1* data=image.data();
 	int offset;

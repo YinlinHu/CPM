@@ -11,7 +11,7 @@ CPM::CPM()
 	_step = 3;
 	_isStereo = false;
 
-	_maxIters = 10;
+	_maxIters = 8;
 	_stopIterRatio = 0.05;
 	_pydRatio = 0.5;
 
@@ -240,13 +240,23 @@ float CPM::MatchCost(FImage& img1, FImage& img2, UCImage* im1f, UCImage* im2f, i
 
 #ifdef WITH_SSE
 	// SSE2
-	hu_m128 *r1 = (hu_m128*)p1, *r2 = (hu_m128*)p2, r3;
+	unsigned char *_p1 = p1, *_p2 = p2;
+	hu_m128 r1, r2, r3;
 	int iterCnt = ch / 16;
 	int idx = 0;
+	int sum0 = 0;
+	int sum1 = 0;
 	for (idx = 0; idx < iterCnt; idx++){
-		r3.mi = _mm_sad_epu8(r1[idx].mi, r2[idx].mi);
-		totalDiff += (r3.m128i_u16[0] + r3.m128i_u16[4]);
+		memcpy(&r1, _p1, sizeof(hu_m128));
+		memcpy(&r2, _p2, sizeof(hu_m128));
+		_p1 += sizeof(hu_m128);
+		_p2 += sizeof(hu_m128);
+		r3.mi = _mm_sad_epu8(r1.mi, r2.mi);
+		sum0 += r3.m128i_u16[0];
+		sum1 += r3.m128i_u16[4];
 	}
+	totalDiff += sum0;
+	totalDiff += sum1;
 	// add the left
 	for (idx *= 16; idx < ch; idx++){
 		totalDiff += abs(p1[idx] - p2[idx]);
@@ -290,6 +300,7 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 	}
 
 	int iter = 0;
+	float lastUpdateRatio = 2;
 	for (iter = 0; iter < _maxIters; iter++)
 	{
 		int updateCount = 0;
@@ -319,8 +330,13 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 				}
 				float tu = seedsFlow->pData[2 * nbIdx[i]];
 				float tv = seedsFlow->pData[2 * nbIdx[i] + 1];
+				float cu = seedsFlow->pData[2 * idx];
+				float cv = seedsFlow->pData[2 * idx + 1];
+				if (abs(tu - cu) < 1e-6 && abs(tv - cv) < 1e-6){
+					continue;
+				}
 				float tc = MatchCost(im1, im2, im1f, im2f, x, y, x + tu, y + tv);
-				if (tc < bestCosts[idx]){
+				if (tc <= bestCosts[idx]){
 					bestCosts[idx] = tc;
 					seedsFlow->pData[2 * idx] = tu;
 					seedsFlow->pData[2 * idx + 1] = tv;
@@ -339,8 +355,14 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 					tv = seedsFlow->pData[2 * idx + 1] + rand() % (2 * mag + 1) - mag;
 				}
 
+				float cu = seedsFlow->pData[2 * idx];
+				float cv = seedsFlow->pData[2 * idx + 1];
+				if (abs(tu - cu) < 1e-6 && abs(tv - cv) < 1e-6){
+					continue;
+				}
+
 				float tc = MatchCost(im1, im2, im1f, im2f, x, y, x + tu, y + tv);
-				if (tc < bestCosts[idx]){
+				if (tc <= bestCosts[idx]){
 					bestCosts[idx] = tc;
 					seedsFlow->pData[2 * idx] = tu;
 					seedsFlow->pData[2 * idx + 1] = tv;
@@ -358,10 +380,11 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 
 		float updateRatio = float(updateCount) / ptNum;
 		//printf("Update ratio: %f\n", updateRatio);
-		if (updateRatio < _stopIterRatio){
+		if (updateRatio < _stopIterRatio || lastUpdateRatio - updateRatio < 0.01){
 			iter++;
 			break;
 		}
+		lastUpdateRatio = updateRatio;
 	}
 
 	delete[] vFlags;
