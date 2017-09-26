@@ -197,7 +197,7 @@ public:
 
 	void MedianFiltering(int fsize = 2);
 
-	// funciton for filtering
+	// function for filtering
 	template <class T1>
 	void imfilter(Image<T1>& image,const float* filter,int fsize) const;
 
@@ -219,7 +219,7 @@ public:
 	template<class T1>
 	void imfilter_hv(Image<T1>& image,const Image<float>& hfilter,const Image<float>& vfilter) const;
 
-	// funciton for filtering transpose
+	// function for filtering transpose
 	template <class T1>
 	void imfilter_transpose(Image<T1>& image,const float* filter,int fsize) const;
 
@@ -307,7 +307,7 @@ public:
 	void Add(const T value);
 
 	template <class T1>
-	void Add(const Image<T1>& image1,const float value);
+	void Add(const Image<T1>& image1,const float ratio);
 
 	template <class T1>
 	void Add(const Image<T1>& image1);
@@ -317,7 +317,7 @@ public:
 
 	void Subtract(const T value);
 
-	// arestmetic operators
+	// arithmetic operators
 	void square();
 
 	// exp
@@ -340,18 +340,18 @@ public:
 	float innerproduct(Image<T1>& image) const;
 
 	template <class T1>
-	void Integral(Image<T1>& image);
+	void Integral(Image<T1>& image) const;
 
 	template <class T1>
-	void BoxFilter(Image<T1>& image, int r, bool norm = true);
+	void BoxFilter(Image<T1>& image, int r, bool norm = true) const;
 
 	// function to bilateral smooth flow field
 	template <class T1>
-	void BilateralFiltering(Image<T1>& other,int fsize,float filter_signa,float range_sigma);
+	void BilateralFiltering(Image<T1>& other,int fsize,float filter_signa,float range_sigma) const;
 
 	// function to bilateral smooth an image
 	//Image<T> BilateralFiltering(int fsize,float filter_sigma,float range_sigma);
-	void imBilateralFiltering(Image<T>& result,int fsize,float filter_sigma,float range_sigma);
+	void imBilateralFiltering(Image<T>& result,int fsize,float filter_sigma,float range_sigma) const;
 
 	template <class T1,class T2>
 	int kmeansIndex(int pixelIndex,T1& minDistance,const T2* pDictionary,int nVocabulary, int nDim);
@@ -818,7 +818,7 @@ void Image<T>::imresize(Image<T1>& result, int DstWidth, int DstHeight, InterTyp
 template <class T>
 void Image<T>::imresize(int dstWidth, int dstHeight, InterType type/* = INTER_LINEAR*/)
 {
-	FImage foo(dstWidth,dstHeight,nChannels);
+	Image foo(dstWidth,dstHeight,nChannels); // kfj: it should be Image instead of FImage
 	ImageProcessing::ResizeImage(pData,foo.data(),imWidth,imHeight,nChannels,dstWidth,dstHeight,type);
 	copyData(foo);
 }
@@ -1289,7 +1289,6 @@ template <class T>
 template <class T1>
 void Image<T>::GaussianSmoothing(Image<T1>& image,float sigma,int fsize) const 
 {
-	Image<T1> foo;
 	// constructing the 1D gaussian filter
 	float* gFilter;
 	gFilter=new float[fsize*2+1];
@@ -1306,7 +1305,7 @@ void Image<T>::GaussianSmoothing(Image<T1>& image,float sigma,int fsize) const
 	// apply filtering
 	imfilter_hv(image,gFilter,fsize,gFilter,fsize);
 
-	delete gFilter;
+	delete []gFilter;
 }
 
 //------------------------------------------------------------------------------------------
@@ -1462,7 +1461,6 @@ bool Image<T>::BoundaryCheck() const
 		if(!(pData[i]<1E10 && pData[i]>-1E10))
 		{
 			cout<<"Error, bad data!"<<endl;
-			i = i;
 			return false;
 		}
 	return true;
@@ -2311,21 +2309,21 @@ float Image<T>::innerproduct(Image<T1> &image) const
 
 template <class T>
 template <class T1>
-void Image<T>::Integral(Image<T1>& image)
+void Image<T>::Integral(Image<T1>& image) const
 {
 	ImageProcessing::Integral(pData, image.data(), imWidth, imHeight, nChannels);
 }
 
 template <class T>
 template <class T1>
-void Image<T>::BoxFilter(Image<T1>& image, int r, bool norm /*= true*/)
+void Image<T>::BoxFilter(Image<T1>& image, int r, bool norm /*= true*/) const
 {
 	ImageProcessing::BoxFilter(pData, image.data(), imWidth, imHeight, nChannels, r, norm);
 }
 
 template <class T>
 template <class T1>
-void Image<T>::BilateralFiltering(Image<T1>& other,int fsize,float filter_sigma,float range_sigma)
+void Image<T>::BilateralFiltering(Image<T1>& other,int fsize,float filter_sigma,float range_sigma) const
 {
 	float *pBuffer;
 	Image<T1> result(other);
@@ -2372,14 +2370,14 @@ void Image<T>::BilateralFiltering(Image<T1>& other,int fsize,float filter_sigma,
 				result.data()[(i*imWidth+j)*other.nchannels()]=pBuffer[k]/totalWeight;
 		}
 	other.copyData(result);
-	delete pBuffer;
-	delete pSpatialWeight;
+	delete []pBuffer;
+	delete []pSpatialWeight;
 }
 
 
 template <class T>
 //Image<T>  Image<T>::BilateralFiltering(int fsize,float filter_sigma,float range_sigma)
-void  Image<T>::imBilateralFiltering(Image<T>& result,int fsize,float filter_sigma,float range_sigma)
+void  Image<T>::imBilateralFiltering(Image<T>& result,int fsize,float filter_sigma,float range_sigma) const
 {
 	//Image<T> result(*this);
 	result.allocate(*this);
@@ -2430,8 +2428,8 @@ void  Image<T>::imBilateralFiltering(Image<T>& result,int fsize,float filter_sig
 				result.data()[offset0+k]=pBuffer[k]/totalWeight;
 
 		}
-	delete pBuffer;
-	delete pSpatialWeight;
+	delete []pBuffer;
+	delete []pSpatialWeight;
 	//return result;
 }
 
@@ -2464,7 +2462,7 @@ int Image<T>::kmeansIndex(int pixelIndex,T1& MinDistance,const T2* pDictionary,i
 	return index;
 }
 
-// function to convert an image to visual words bsaed on the vocabulary
+// function to convert an image to visual words based on the vocabulary
 template <class T>
 template <class T1,class T2>
 void Image<T>::ConvertToVisualWords(Image<T1> &result, const T2 *pDictionary, int nDim, int nVocabulary)

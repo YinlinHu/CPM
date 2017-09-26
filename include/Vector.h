@@ -154,7 +154,7 @@ template <class T>
 void Vector<T>::releaseData()
 {
 	if(pData!=NULL)
-		delete pData;
+		delete []pData;
 	pData=NULL;
 	nDim=0;
 }
