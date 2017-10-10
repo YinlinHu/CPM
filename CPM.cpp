@@ -1,8 +1,6 @@
 #include "CPM.h"
 #include "ImageFeature.h"
 
-#include "opencv2/xfeatures2d.hpp" // for "DAISY" descriptor
-
 // [4/6/2017 Yinlin.Hu]
 
 #define UNKNOWN_FLOW 1e10
@@ -69,10 +67,8 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	_im1f = new UCImage[nLevels];
 	_im2f = new UCImage[nLevels];
 	for (int i = 0; i < nLevels; i++){
-		imDaisy(_pyd1[i], _im1f[i]);
-		imDaisy(_pyd2[i], _im2f[i]);
-		//ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
-		//ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
+		ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
+		ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
 	}
 	t.toc("get feature: ");
 
@@ -186,40 +182,6 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	}
 
 	return validMatCnt;
-}
-
-void CPM::imDaisy(FImage& img, UCImage& outFtImg)
-{
-	FImage imgray;
-	img.desaturate(imgray);
-
-	int w = imgray.width();
-	int h = imgray.height();
-
-	// use the version in OpenCV
-	// the parameters are adapted from "DiscreteFlow, [Menze 2015]"
-	cv::Ptr<cv::xfeatures2d::DAISY> daisy =
-		cv::xfeatures2d::DAISY::create(5, 4, 4, 4, 
-		cv::xfeatures2d::DAISY::NRM_PARTIAL, cv::noArray(), false, false);
-	cv::Mat cvImg(h, w, CV_8UC1);
-	for (int i = 0; i < h; i++){
-		for (int j = 0; j < w; j++){
-			cvImg.at<unsigned char>(i, j) = imgray[i*w + j] * 255;
-		}
-	}
-	cv::Mat outFeatures;
-	daisy->compute(cvImg, outFeatures);
-
-	int itSize = outFeatures.cols;
-	outFtImg.allocate(w, h, itSize);
-	for (int i = 0; i < h; i++){
-		for (int j = 0; j < w; j++){
-			int idx = i*w + j;
-			for (int k = 0; k < itSize; k++){
-				outFtImg.pData[idx*itSize + k] = outFeatures.at<float>(idx, k) * 255;
-			}
-		}
-	}
 }
 
 void CPM::CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, IntImage& kLabel2, int* valid, float th)
