@@ -1,6 +1,8 @@
 #include "CPM.h"
 #include "ImageFeature.h"
 
+#include "opencv2/xfeatures2d.hpp" // for "DAISY" descriptor
+
 // [4/6/2017 Yinlin.Hu]
 
 #define UNKNOWN_FLOW 1e10
@@ -67,8 +69,10 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	_im1f = new UCImage[nLevels];
 	_im2f = new UCImage[nLevels];
 	for (int i = 0; i < nLevels; i++){
-		ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
-		ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
+		imDaisy(_pyd1[i], _im1f[i]);
+		imDaisy(_pyd2[i], _im2f[i]);
+// 		ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
+// 		ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
 	}
 	t.toc("get feature: ");
 
@@ -182,6 +186,39 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	}
 
 	return validMatCnt;
+}
+
+void CPM::imDaisy(FImage& img, UCImage& outFtImg)
+{
+	FImage imgray;
+	img.desaturate(imgray);
+
+	int w = imgray.width();
+	int h = imgray.height();
+
+	// use the version in OpenCV
+	cv::Ptr<cv::xfeatures2d::DAISY> daisy =
+		cv::xfeatures2d::DAISY::create(5, 3, 4, 8, 
+		cv::xfeatures2d::DAISY::NRM_FULL, cv::noArray(), false, false);
+	cv::Mat cvImg(h, w, CV_8UC1);
+	for (int i = 0; i < h; i++){
+		for (int j = 0; j < w; j++){
+			cvImg.at<unsigned char>(i, j) = imgray[i*w + j] * 255;
+		}
+	}
+	cv::Mat outFeatures;
+	daisy->compute(cvImg, outFeatures);
+
+	int itSize = outFeatures.cols;
+	outFtImg.allocate(w, h, itSize);
+	for (int i = 0; i < h; i++){
+		for (int j = 0; j < w; j++){
+			int idx = i*w + j;
+			for (int k = 0; k < itSize; k++){
+				outFtImg.pData[idx*itSize + k] = outFeatures.at<float>(idx, k) * 255;
+			}
+		}
+	}
 }
 
 void CPM::CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, IntImage& kLabel2, int* valid, float th)
@@ -336,7 +373,7 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 					continue;
 				}
 				float tc = MatchCost(im1, im2, im1f, im2f, x, y, x + tu, y + tv);
-				if (tc <= bestCosts[idx]){
+				if (tc < bestCosts[idx]){
 					bestCosts[idx] = tc;
 					seedsFlow->pData[2 * idx] = tu;
 					seedsFlow->pData[2 * idx + 1] = tv;
@@ -362,7 +399,7 @@ int CPM::Propogate(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage* pyd1f, UCI
 				}
 
 				float tc = MatchCost(im1, im2, im1f, im2f, x, y, x + tu, y + tv);
-				if (tc <= bestCosts[idx]){
+				if (tc < bestCosts[idx]){
 					bestCosts[idx] = tc;
 					seedsFlow->pData[2 * idx] = tu;
 					seedsFlow->pData[2 * idx + 1] = tv;
@@ -435,7 +472,7 @@ void CPM::PyramidRandomSearch(FImagePyramid& pyd1, FImagePyramid& pyd2, UCImage*
 			UpdateSearchRadius(neighbors, pydSeedsFlow, l, searchRadius);
 
 			// scale the radius accordingly
-			int maxR = _maxDisplacement * pow(ratio, l) + 0.5;
+			int maxR = __min(32, _maxDisplacement * pow(ratio, l) + 0.5);
 			for (int i = 0; i < numV; i++){
 				searchRadius[i] = __max(__min(searchRadius[i], maxR), 1);
 				searchRadius[i] *= (1. / _pydRatio);

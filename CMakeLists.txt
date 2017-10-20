@@ -5,6 +5,7 @@ PROJECT (${PROJ_NAME})
 ADD_DEFINITIONS(-DWITH_SSE)
 
 INCLUDE_DIRECTORIES(
+./
 ./include
 C:/OpenCV/include
 C:/OpenCV/include/opencv
@@ -23,7 +24,9 @@ debug opencv_core310d.lib
 debug opencv_highgui310d.lib
 debug opencv_imgcodecs310d.lib
 debug opencv_imgproc310d.lib
+debug opencv_xfeatures2d310d.lib
 optimized opencv_core310.lib
 optimized opencv_highgui310.lib
 optimized opencv_imgcodecs310.lib
-optimized opencv_imgproc310.lib)
+optimized opencv_imgproc310.lib
+optimized opencv_xfeatures2d310.lib)

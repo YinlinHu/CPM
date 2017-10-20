@@ -1,5 +1,28 @@
 
 #include "CPM.h"
+#include "OpticFlowIO.h"
+
+void Match2Flow(FImage& inMat, FImage& ou, FImage& ov, int w, int h)
+{
+	if (!ou.matchDimension(w, h, 1)){
+		ou.allocate(w, h, 1);
+	}
+	if (!ov.matchDimension(w, h, 1)){
+		ov.allocate(w, h, 1);
+	}
+	ou.setValue(UNKNOWN_FLOW);
+	ov.setValue(UNKNOWN_FLOW);
+	int cnt = inMat.height();
+	for (int i = 0; i < cnt; i++){
+		float* p = inMat.rowPtr(i);
+		float x = p[0];
+		float y = p[1];
+		float u = p[2] - p[0];
+		float v = p[3] - p[1];
+		ou[y*w + x] = u;
+		ov[y*w + x] = v;
+	}
+}
 
 void WriteMatches(const char *filename, FImage& inMat)
 {
@@ -48,6 +71,13 @@ int main(int argc, char** argv)
 	cpm.Matching(img1, img2, matches);
 
 	totalT.toc("total time: ");
+
+	FImage u, v;
+	char tmpName[256];
+	strcpy(tmpName, outMatName);
+	strcat(tmpName, ".png");
+	Match2Flow(matches, u, v, w, h);
+	OpticFlowIO::SaveFlowAsImage(tmpName, u.pData, v.pData, w, h);
 
 	WriteMatches(outMatName, matches);
 
