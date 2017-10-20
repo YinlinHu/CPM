@@ -2,6 +2,7 @@
 #include "CPM.h"
 #include "OpticFlowIO.h"
 
+// draw each match as a 3x3 color block
 void Match2Flow(FImage& inMat, FImage& ou, FImage& ov, int w, int h)
 {
 	if (!ou.matchDimension(w, h, 1)){
@@ -19,8 +20,14 @@ void Match2Flow(FImage& inMat, FImage& ou, FImage& ov, int w, int h)
 		float y = p[1];
 		float u = p[2] - p[0];
 		float v = p[3] - p[1];
-		ou[y*w + x] = u;
-		ov[y*w + x] = v;
+		for (int di = -1; di <= 1; di++){
+			for (int dj = -1; dj <= 1; dj++){
+				int tx = ImageProcessing::EnforceRange(x + dj, w);
+				int ty = ImageProcessing::EnforceRange(y + di, h);
+				ou[ty*w + tx] = u;
+				ov[ty*w + tx] = v;
+			}
+		}
 	}
 }
 
