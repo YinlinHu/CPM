@@ -1,7 +1,9 @@
 #include "CPM.h"
 #include "ImageFeature.h"
 
+#ifdef USE_DAISY
 #include "opencv2/xfeatures2d.hpp" // for "DAISY" descriptor
+#endif
 
 // [4/6/2017 Yinlin.Hu]
 
@@ -69,10 +71,13 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	_im1f = new UCImage[nLevels];
 	_im2f = new UCImage[nLevels];
 	for (int i = 0; i < nLevels; i++){
-		imDaisy(_pyd1[i], _im1f[i]);
-		imDaisy(_pyd2[i], _im2f[i]);
-// 		ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
-// 		ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
+		#ifdef USE_DAISY
+			imDaisy(_pyd1[i], _im1f[i]);
+			imDaisy(_pyd2[i], _im2f[i]);
+		#else
+			ImageFeature::imSIFT(_pyd1[i], _im1f[i], 2, 1, true, 8);
+			ImageFeature::imSIFT(_pyd2[i], _im2f[i], 2, 1, true, 8);
+		#endif
 	}
 	t.toc("get feature: ");
 
@@ -188,6 +193,7 @@ int CPM::Matching(FImage& img1, FImage& img2, FImage& outMatches)
 	return validMatCnt;
 }
 
+#ifdef USE_DAISY
 void CPM::imDaisy(FImage& img, UCImage& outFtImg)
 {
 	FImage imgray;
@@ -220,6 +226,7 @@ void CPM::imDaisy(FImage& img, UCImage& outFtImg)
 		}
 	}
 }
+#endif
 
 void CPM::CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, IntImage& kLabel2, int* valid, float th)
 {
@@ -574,7 +581,7 @@ CPM::Point CPM::circumcenter(Point a, Point b, Point c)
 	Point ua, ub, va, vb;
 	ua.x = (a.x + b.x) / 2;
 	ua.y = (a.y + b.y) / 2;
-	ub.x = ua.x - a.y + b.y;//根据 垂直判断，两线段点积为0 
+	ub.x = ua.x - a.y + b.y;
 	ub.y = ua.y + a.x - b.x;
 	va.x = (a.x + c.x) / 2;
 	va.y = (a.y + c.y) / 2;
@@ -601,14 +608,14 @@ float CPM::MinimalCircle(float* x, float*y, int n, float* centerX, float* center
 	int i, j, k;
 	o = p[0];
 	r = 0;
-	for (i = 1; i < n; i++)//准备加入的点 
+	for (i = 1; i < n; i++)
 	{
-		if (dist(p[i], o) - r > eps)//如果第i点在 i-1前最小圆外面 
+		if (dist(p[i], o) - r > eps)
 		{
-			o = p[i];//另定圆心 
-			r = 0;//另定半径 
+			o = p[i];
+			r = 0;
 
-			for (j = 0; j < i; j++)//循环再确定半径 
+			for (j = 0; j < i; j++)
 			{
 				if (dist(p[j], o) - r > eps)
 				{
@@ -619,12 +626,12 @@ float CPM::MinimalCircle(float* x, float*y, int n, float* centerX, float* center
 
 					for (k = 0; k < j; k++)
 					{
-						if (dist(o, p[k]) - r > eps)//如果j前面有点不符和 i与j确定的圆，则更新 
+						if (dist(o, p[k]) - r > eps)
 						{
 							o = circumcenter(p[i], p[j], p[k]);
 							r = dist(o, p[k]);
 						}
-					}//循环不超过3层，因为一个圆最多3个点可以确定 
+					}
 				}
 			}
 		}

@@ -39,7 +39,9 @@ public:
 	void SetStep(int step);
 
 private:
+#ifdef USE_DAISY
 	void imDaisy(FImage& img, UCImage& outFtImg);
+#endif
 	void CrossCheck(IntImage& seeds, FImage& seedsFlow, FImage& seedsFlow2, IntImage& kLabel2, int* valid, float th);
 	float MatchCost(FImage& img1, FImage& img2, UCImage* im1f, UCImage* im2f, int x1, int y1, int x2, int y2);
 
