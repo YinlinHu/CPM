@@ -1,20 +1,32 @@
-# CPM
-Code for
+# Introduction
 
-《Efficient Coarse-to-Fine PatchMatch for Large Displacement Optical Flow》 CVPR 2016
+This repository contains the code for the paper **Efficient Coarse-to-Fine PatchMatch for Large Displacement Optical Flow**. [Yinlin Hu](http://yinlinhu.github.io), Rui Song, and Yunsong Li. CVPR. 2016. [\[Paper\]](https://zpascal.net/cvpr2016/Hu_Efficient_Coarse-To-Fine_PatchMatch_CVPR_2016_paper.pdf)
 
-《Coarse-to-fine PatchMatch for dense correspondence》 T-CSVT
+# How to Use
 
-The program has been built and tested on Windows 7 and Ubuntu 16.04.
+It is assumed that the OpenCV has been installed correctly.
 
-Note that, the code here is a little different from that when the paper accepted. Rather that SIFT-FLOW descriptor, we found DAISY descriptor is more suitable for practical usage (high density with a small sacrifice in accuracy). If you want to reproduce the result on KITTI and MPI accurately, please use the SIFT-Flow descriptor.
+```
+$ cmake .
+$ make
+```
 
-> USAGE: cpm img1Name img2Name outMatchName
+Then, you can play with the examples:
 
-Explanations:
+```
+$ bash demo.sh
+```
 
-The output of the program is a text file, which is in the format of "x1,y1,x2,y2" corresponding to one match per line.
+# Notes
+For Windows system support, you can explore 'CMakeLists_win.txt' and prebuilt binaries in the directory 'win32'.
 
-huyinlin@gmail.com
+# Citing
 
-Yinlin
+```
+@inproceedings{hu2016cpm,
+  title={Efficient Coarse-to-Fine PatchMatch for Large Displacement Optical Flow},
+  author={Yinlin Hu and Rui Song and Yunsong Li},
+  booktitle={CVPR},
+  year={2016}
+}
+```
