@@ -127,7 +127,7 @@ int OpticFlowIO::ReadKittiFlowFile(T* U, T* V, int* w, int* h, const char* filen
 		return -1;
 	}
 
-	IplImage* img = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH);
+	IplImage* img = cv::imread(filename, cv::IMREAD_COLOR | cv::IMREAD_ANYDEPTH);
 	if (img == NULL){
 		printf("ReadKittiFlowFile: could not open %s\n", filename);
 		return -1;
@@ -195,8 +195,8 @@ int OpticFlowIO::WriteKittiFlowFile(T* U, T* V, int w, int h, const char* filena
 		}
 	}
 
-	const int params[2]={CV_IMWRITE_PNG_COMPRESSION, 1};
-	cvSaveImage(filename, img, params); // slight lossy PNG
+	// const int params[2]={cv::IMWRITE_PNG_COMPRESSION, 1};
+	cv::imwrite(filename, cv::cvarrToMat(img)); // slight lossy PNG
 	cvReleaseImage(&img);
 	return 0;
 }
